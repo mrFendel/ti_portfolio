@@ -17,6 +17,11 @@ def accs_info(acc_token: str):
     return response
 
 
+def accs_id(acc_token: str):
+    accounts_list = accs_info(acc_token).accounts
+    return [getattr(acc, 'id') for acc in accounts_list]
+
+
 def conditional_to_decimals(obj, currency=False):
     if isinstance(obj, MoneyValue):
         return to_decimal(obj, currency=currency)
