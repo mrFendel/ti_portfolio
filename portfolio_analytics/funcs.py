@@ -1,38 +1,11 @@
-from tinkoff.invest import Client, MoneyValue, Quotation, InstrumentIdType
+from portfolio_analytics.utils import *
 import pandas as pd
-import portfolio_analytics.keys as keys
-# TODO: aggregate data by all accounts
-
-
-def to_decimal(value, currency=False):
-    if currency:
-        return value.units + value.nano * 10 ** -9, value.currency
-    else:
-        return value.units + value.nano * 10**-9
-
-
-def accs_info(acc_token: str):
-    with Client(acc_token) as client:
-        response = client.users.get_accounts()
-    return response
-
-
-def accs_id(acc_token: str):
-    accounts_list = accs_info(acc_token).accounts
-    return [getattr(acc, 'id') for acc in accounts_list]
-
-
-def conditional_to_decimals(obj, currency=False):
-    if isinstance(obj, MoneyValue):
-        return to_decimal(obj, currency=currency)
-    elif isinstance(obj, Quotation):
-        return to_decimal(obj)
-    else:
-        return obj
 
 
 # TODO: change of currency
 def pflo_totals(acc_token: str, id: str, show=False):
+    """ Gathers total portfolio statistics to DataFrame """
+
     with Client(acc_token) as client:
         response = client.operations.get_portfolio(account_id=id)
         totals_df = pd.DataFrame([(to_decimal(getattr(response, key), currency=True)) for key in keys.totals],
@@ -46,19 +19,23 @@ def pflo_totals(acc_token: str, id: str, show=False):
     return totals_df, pct_profit
 
 
-def pos_data_to_dict(position_data, keys_list):
-    data = {key: conditional_to_decimals(getattr(position_data, key)) for key in keys_list}
-    data['currency'] = position_data.current_price.currency
-    return data
+def agg_pflo_totals(acc_token: str, mode=''):
+    """ Gathers positions statistics for all portfolios to DataFrame """
 
+    acc_id_list = accs_id(acc_token)
+    df_list = [pflo_totals(acc_token, acc_id)[0] for acc_id in acc_id_list]
+    df_agg = df_list[0]
+    if len(acc_id_list) > 1:
+        for i in range(1, len(df_list)):
+            df_add = df_list[i]
+            df_agg['AMOUNT'] = df_agg['AMOUNT'] + df_add['AMOUNT']
 
-def instrument_info(acc_token: str, figi: str):
-    with Client(acc_token) as client:
-        response = client.instruments.get_instrument_by(id_type=InstrumentIdType(1), id=figi)
-        return {key: getattr(response.instrument, key) for key in keys.instrument}
+    return df_agg
 
 
 def pflo_positions(acc_token: str, id: str, mode=''):
+    """ Gathers portfolio positions statistics to DataFrame """
+
     if mode == 'short':
         keys_list = keys.pflo_pos_short
     elif mode == 'long':
@@ -79,6 +56,14 @@ def pflo_positions(acc_token: str, id: str, mode=''):
 
         positions_df = pd.concat([names_df, positions_df], axis=1)
     return positions_df
+
+
+def agg_pflo_positions(acc_token: str, mode=''):
+    """ Gathers positions statistics for all portfolios to DataFrame """
+
+    acc_id_list = accs_id(acc_token)
+    df_list = [pflo_positions(acc_token, acc_id, mode) for acc_id in acc_id_list]
+    return pd.concat(df_list, ignore_index=True)
 
 
 # TODO: process positions request
