@@ -29,7 +29,6 @@ def agg_pflo_totals(acc_token: str, mode=''):
         for i in range(1, len(df_list)):
             df_add = df_list[i]
             df_agg['AMOUNT'] = df_agg['AMOUNT'] + df_add['AMOUNT']
-
     return df_agg
 
 

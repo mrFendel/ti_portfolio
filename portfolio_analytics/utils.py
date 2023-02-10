@@ -1,3 +1,4 @@
+import pandas as pd
 from tinkoff.invest import Client, MoneyValue, Quotation, InstrumentIdType
 import portfolio_analytics.keys as keys
 
@@ -12,7 +13,7 @@ def to_decimal(value, currency=False):
 
 
 def conditional_to_decimals(obj, currency=False):
-    """ Converts MoneyValue or Quantity class to decimal form and also returns currency """
+    """ Conditionally converts to decimal form and returns currency if value is MoneyValue or Quantity object """
 
     if isinstance(obj, MoneyValue):
         return to_decimal(obj, currency=currency)
@@ -22,13 +23,15 @@ def conditional_to_decimals(obj, currency=False):
         return obj
 
 
-# TODO: to dict to DF
-def accs_info(acc_token: str):
-    """ Gets info about Clients accounts """
+def accs_info(acc_token: str, to_df=False):
+    """ Gets info about Clients accounts and could convert it to DataFrame"""
 
     with Client(acc_token) as client:
         response = client.users.get_accounts()
-    return response
+    if not to_df:
+        return response
+    else:
+        return pd.DataFrame([elem.__dict__ for elem in response.accounts])
 
 
 def accs_id(acc_token: str):
@@ -46,9 +49,12 @@ def pos_data_to_dict(position_data, keys_list):
     return data
 
 
-def instrument_info(acc_token: str, figi: str):
-    """ Gathers instrument's information to dictionary """
+def instrument_info(acc_token: str, figi: str, short=False):
+    """ Gathers instrument's information to Series """
 
     with Client(acc_token) as client:
         response = client.instruments.get_instrument_by(id_type=InstrumentIdType(1), id=figi)
-        return {key: getattr(response.instrument, key) for key in keys.instrument}
+        if short:
+            return pd.Series({key: getattr(response.instrument, key) for key in keys.instrument})
+        else:
+            return pd.Series(response.instrument.__dict__)
