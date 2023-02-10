@@ -63,11 +63,3 @@ def agg_pflo_positions(acc_token: str, mode=''):
     acc_id_list = accs_id(acc_token)
     df_list = [pflo_positions(acc_token, acc_id, mode) for acc_id in acc_id_list]
     return pd.concat(df_list, ignore_index=True)
-
-
-# TODO: process positions request
-def positions(acc_token: str, id: str):
-    with Client(acc_token) as client:
-        ops = client.operations
-        response = ops.get_positions(account_id=id)
-    return response

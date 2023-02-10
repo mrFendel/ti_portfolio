@@ -58,3 +58,11 @@ def instrument_info(acc_token: str, figi: str, short=False):
             return pd.Series({key: getattr(response.instrument, key) for key in keys.instrument})
         else:
             return pd.Series(response.instrument.__dict__)
+
+
+def brand_info(acc_token: str, uid):
+    """ Gathers brand's information to Series """
+
+    with Client(acc_token) as client:
+        response = client.instruments.get_brands_by(uid)
+    return pd.Series(response.__dict__)
