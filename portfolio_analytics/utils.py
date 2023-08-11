@@ -135,6 +135,5 @@ def get_candles(acc_token: str,
 
     with Client(acc_token) as client:
         response = client.market_data.get_candles(from_=from_, to=to, interval=interval, figi=figi)
-        print(len(response.candles))
 
     return create_candle_df(response.candles)
