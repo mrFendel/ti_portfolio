@@ -78,18 +78,33 @@ def all_shares_info(acc_token: str, short: bool = True):
         )
 
     if short:
-        return figi_df[['figi', 'ticker', 'lot', 'currency', 'name', 'exchange']]
+        return figi_df[['figi', 'ticker', 'lot', 'currency', 'name', 'exchange', 'api_trade_available_flag']]
     else:
         return figi_df
 
 
-def get_figi(tickers: list):
+def get_figi(tickers: list, ru=False, api_avalable=False, exchange=''):
     """
     Gets figi by ticker
     NB!! USE WITH LISTS FOR OPTIMAL WORK
     """
+    file = '_shares_info_short.csv'
+    if api_avalable:
+        file = '_api' + file
+    else:
+        pass
+    if ru:
+        file = 'ru' + file
+    else:
+        file = 'all' + file
 
-    df = pd.read_csv('data/shares_info.csv')
+    df = pd.read_csv(f'data/{file}')
+    if exchange == '':
+        assert df.shape[0] != len(df['ticker'].unique()), 'Tickers are not unique. Specify exchange'
+    else:
+        df = df[df['exchange'] == exchange]
+        assert df.shape[0] != len(df['ticker'].unique()), 'Tickers are not unique.'
+
     dictionary = dict(zip(df['ticker'].values, df['figi'].values))
     if not tickers:
         return dictionary
