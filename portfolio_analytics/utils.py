@@ -100,10 +100,10 @@ def get_figi(tickers: list, ru=False, api_avalable=False, exchange=''):
 
     df = pd.read_csv(f'data/{file}')
     if exchange == '':
-        assert df.shape[0] != len(df['ticker'].unique()), 'Tickers are not unique. Specify exchange'
+        assert df.shape[0] == len(df['ticker'].unique()), 'Tickers are not unique. Specify exchange'
     else:
         df = df[df['exchange'] == exchange]
-        assert df.shape[0] != len(df['ticker'].unique()), 'Tickers are not unique.'
+        assert df.shape[0] == len(df['ticker'].unique()), 'Tickers are not unique.'
 
     dictionary = dict(zip(df['ticker'].values, df['figi'].values))
     if not tickers:
