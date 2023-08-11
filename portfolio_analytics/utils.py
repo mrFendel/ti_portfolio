@@ -1,5 +1,7 @@
+from datetime import datetime
+
 import pandas as pd
-from tinkoff.invest import Client, MoneyValue, Quotation, InstrumentIdType
+from tinkoff.invest import Client, MoneyValue, Quotation, InstrumentIdType, InstrumentStatus, CandleInterval
 import portfolio_analytics.keys as keys
 
 
@@ -66,3 +68,58 @@ def brand_info(acc_token: str, uid):
     with Client(acc_token) as client:
         response = client.instruments.get_brands_by(uid)
     return pd.Series(response.__dict__)
+
+
+def all_shares_info(acc_token: str, short: bool = True):
+    """ Gets information about all shares in a form of DataFrame"""
+    with Client(acc_token) as cl:
+        figi_df = pd.DataFrame(
+            cl.instruments.shares(instrument_status=InstrumentStatus.INSTRUMENT_STATUS_ALL).instruments
+        )
+
+    if short:
+        return figi_df[['figi', 'ticker', 'lot', 'currency', 'name', 'exchange']]
+    else:
+        return figi_df
+
+
+def get_figi(tickers: list):
+    """
+    Gets figi by ticker
+    NB!! USE WITH LISTS FOR OPTIMAL WORK
+    """
+
+    df = pd.read_csv('data/shares_info.csv')
+    dictionary = dict(zip(df['ticker'].values, df['figi'].values))
+    if not tickers:
+        return dictionary
+    elif len(tickers) == 1:
+        return dictionary[tickers]
+    else:
+        return [dictionary[tick] for tick in tickers]
+
+
+def create_candle_df(candles):
+    df = pd.DataFrame([{
+        'time': c.time,
+        'volume': c.volume,
+        'open': to_decimal(c.open),
+        'close': to_decimal(c.close),
+        'high': to_decimal(c.high),
+        'low': to_decimal(c.low),
+    } for c in candles])
+
+    return df
+
+
+def get_candles(acc_token: str,
+                figi: str, from_: datetime,
+                to: datetime | None = None,
+                interval=CandleInterval.CANDLE_INTERVAL_1_MIN
+                ):
+
+    with Client(acc_token) as client:
+        response = client.market_data.get_candles(from_=from_, to=to, interval=interval, figi=figi)
+        print(len(response.candles))
+
+    return create_candle_df(response.candles)
