@@ -98,7 +98,7 @@ def get_figi(tickers: list, ru=False, api_avalable=False, exchange=''):
     else:
         file = 'all' + file
 
-    df = pd.read_csv(f'data/{file}')
+    df = pd.read_csv(f'../data/{file}')
     if exchange == '':
         assert df.shape[0] == len(df['ticker'].unique()), 'Tickers are not unique. Specify exchange'
     else:

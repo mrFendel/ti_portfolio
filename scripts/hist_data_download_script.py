@@ -9,14 +9,17 @@ tok = creds.token_ro_all
 
 tickers = ['SBER', 'TGKB', 'CNTL', 'KZOS', 'SNGS', 'RTKM', 'NKNC', 'LSNG', 'PMSB', 'MTLR', 'TATN', 'KAZT', 'BANE', 'LNZL']
 # NB!!! MGTS, KRKN are not api avalable, but prefs are OK
-# pref_tickers = list(map(lambda string: string + 'P', tickers))
+# TODO: download 2 last shares
+pref_tickers = list(map(lambda string: string + 'P', tickers))
+
 
 figis = get_figi(tickers, ru=True, api_avalable=True)
-# pref_figis = get_figi(pref_tickers, ru=True, api_avalable=True)
+print(figis, )
+pref_figis = get_figi(pref_tickers, ru=True, api_avalable=True)
 # print(figis)
 
 end = datetime(year=2023, month=8, day=10)
-for name in figis[:1]:
+for name in (figis[-2], figis[-1]):
     df_list = []
     for i in tqdm(range(1825)):
         df = get_candles(acc_token=tok,
@@ -28,4 +31,4 @@ for name in figis[:1]:
         time.sleep(0.2)
 
     res = pd.concat(df_list, axis=0, ignore_index=True)
-    res.to_csv(f'data/shares_data/companies/{name}.csv')
+    res.to_csv(f'../data/shares_data/companies_pref/{name}.csv')
