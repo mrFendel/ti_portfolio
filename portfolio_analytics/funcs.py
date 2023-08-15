@@ -1,4 +1,4 @@
-from portfolio_analytics.utils import *
+from utils import *
 import pandas as pd
 
 

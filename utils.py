@@ -2,7 +2,7 @@ from datetime import datetime
 
 import pandas as pd
 from tinkoff.invest import Client, MoneyValue, Quotation, InstrumentIdType, InstrumentStatus, CandleInterval
-import portfolio_analytics.keys as keys
+import keys as keys
 
 
 def to_decimal(value, currency=False):
