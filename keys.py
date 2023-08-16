@@ -14,4 +14,4 @@ pflo_pos_short = ['figi', 'quantity', 'average_position_price', 'current_price']
 instrument = ['ticker', 'name', 'exchange', 'country_of_risk', 'country_of_risk_name', 'instrument_type']
 
 pref_tickers = ['SBER', 'TGKB', 'CNTL', 'KZOS', 'SNGS', 'RTKM', 'NKNC', 'LSNG', 'PMSB',
-                'MTLR', 'TATN', 'KAZT', 'BANE', 'LNZL', 'TRNF']
+                'MTLR', 'TATN', 'KAZT', 'BANE', 'LNZL']

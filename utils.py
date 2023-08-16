@@ -1,9 +1,23 @@
-from datetime import datetime
+import time
+from datetime import datetime, timedelta
 
 import pandas as pd
 from tinkoff.invest import Client, MoneyValue, Quotation, InstrumentIdType, InstrumentStatus, CandleInterval
-import keys as keys
+from tqdm import tqdm
 
+import keys as keys
+import enum
+
+
+class Interval(enum.Enum):
+    m1 = CandleInterval.CANDLE_INTERVAL_1_MIN
+    m2 = CandleInterval.CANDLE_INTERVAL_2_MIN
+    m3 = CandleInterval.CANDLE_INTERVAL_3_MIN
+    m5 = CandleInterval.CANDLE_INTERVAL_5_MIN
+    m10 = CandleInterval.CANDLE_INTERVAL_10_MIN
+    m15 = CandleInterval.CANDLE_INTERVAL_15_MIN
+    m30 = CandleInterval.CANDLE_INTERVAL_30_MIN
+    h1 = CandleInterval.CANDLE_INTERVAL_HOUR
 
 def to_decimal(value, currency=False):
     """ Converts MoneyValue or Quantity class to decimal form and also returns currency """
@@ -83,6 +97,30 @@ def all_shares_info(acc_token: str, short: bool = True):
         return figi_df
 
 
+def download_all_shares_info(acc_token: str,
+                             short=True,
+                             ru=False,
+                             api_avalable=False):
+    """ Saves information about specified shares to CSV """
+    data = all_shares_info(acc_token=acc_token, short=True)
+
+    file = '_shares_info'
+    if short:
+        file = file + '_short'
+    if api_avalable:
+        file = '_api' + file
+        data = data.loc[data['api_trade_available_flag'] == True]
+
+    if ru:
+        file = 'ru' + file
+        data = data.loc[data['currency'] == 'rub']
+    else:
+        file = 'all' + file
+
+    data.to_csv(f'../data/{file}.csv')
+    print(f'{file}.csv saved.')
+
+
 def get_figi(tickers: list, ru=False, api_avalable=False, exchange=''):
     """
     Gets figi by ticker
@@ -98,7 +136,7 @@ def get_figi(tickers: list, ru=False, api_avalable=False, exchange=''):
     else:
         file = 'all' + file
 
-    df = pd.read_csv(f'../data/{file}')
+    df = pd.read_csv(f'data/{file}')
     if exchange == '':
         assert df.shape[0] == len(df['ticker'].unique()), 'Tickers are not unique. Specify exchange'
     else:
@@ -115,6 +153,7 @@ def get_figi(tickers: list, ru=False, api_avalable=False, exchange=''):
 
 
 def create_candle_df(candles):
+    """ Makes candle dataframe from raw data """
     df = pd.DataFrame([{
         'time': c.time,
         'volume': c.volume,
@@ -128,12 +167,56 @@ def create_candle_df(candles):
 
 
 def get_candles(acc_token: str,
-                figi: str, from_: datetime,
+                figi: str,
+                from_: datetime,
                 to: datetime | None = None,
                 interval=CandleInterval.CANDLE_INTERVAL_1_MIN
                 ):
-
+    """ Gets OHLC data by figi (overwriting of tinkoff lib method) """
     with Client(acc_token) as client:
         response = client.market_data.get_candles(from_=from_, to=to, interval=interval, figi=figi)
 
     return create_candle_df(response.candles)
+
+
+def download_candles(acc_token: str,
+                     figi: str,
+                     from_: datetime,
+                     to: datetime = datetime.utcnow(),
+                     interval: Interval = Interval.m1,
+                     alt_name: str = None,
+                     path=''):
+    """ Gets & Saves OHLC data by figi to CSV """
+
+    period = to - from_
+    iter_num = int(period / timedelta(days=1))
+    time_appendix = period - iter_num*timedelta(days=1)
+
+    df_list = []
+    if time_appendix > timedelta(minutes=1):
+        new_to = to - time_appendix
+        df = get_candles(acc_token=acc_token,
+                         figi=figi,
+                         from_=new_to,
+                         to=to,
+                         interval=interval)
+        df_list.append(df)
+        time.sleep(0.2)
+
+    for i in tqdm(range(iter_num)):
+        df = get_candles(acc_token=acc_token,
+                         figi=figi,
+                         from_=new_to - timedelta(days=1 + i),
+                         to=new_to - timedelta(days=i),
+                         interval=interval)
+        df_list.append(df)
+        time.sleep(0.2)
+
+    if alt_name is not None:
+        filepath = path + alt_name
+    else:
+        filepath = path + figi
+
+    res = pd.concat(df_list, axis=0, ignore_index=True)
+    res.to_csv(f'{filepath}.csv')
+    print(f'{figi} i.e. {alt_name} saved successfully.')
