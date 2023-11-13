@@ -147,7 +147,7 @@ def get_figi(tickers: list, ru=False, api_avalable=False, exchange=''):
     if not tickers:
         return dictionary
     elif len(tickers) == 1:
-        return dictionary[tickers]
+        return dictionary[tickers[0]]
     else:
         return [dictionary[tick] for tick in tickers]
 
@@ -201,7 +201,7 @@ def download_candles(acc_token: str,
                          to=to,
                          interval=interval)
         df_list.append(df)
-        time.sleep(0.2)
+        time.sleep(0.5)
 
     for i in tqdm(range(iter_num)):
         df = get_candles(acc_token=acc_token,
@@ -210,7 +210,7 @@ def download_candles(acc_token: str,
                          to=new_to - timedelta(days=i),
                          interval=interval)
         df_list.append(df)
-        time.sleep(0.2)
+        time.sleep(0.5)
 
     if alt_name is not None:
         filepath = path + alt_name
